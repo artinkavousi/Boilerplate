@@ -14,6 +14,14 @@ import {
   TorusKnotGeometry
 } from 'three';
 import { Convas } from './CONVAS';
+import { WebGPURenderer } from 'three/webgpu';
+import {
+  ParticlesSim,
+  createDefaultOptions,
+  applyPreset,
+  PRESETS,
+  ParticlesOptions,
+} from './particles-gpu-tsl/Particles.index';
 
 const canvas = document.querySelector('#app');
 if (!(canvas instanceof HTMLCanvasElement)) {
@@ -40,6 +48,15 @@ const halo = createHaloParticles();
 app.stage.add(sculpture);
 app.stage.add(halo);
 
+if (!(app.renderer instanceof WebGPURenderer)) {
+  throw new Error('Particles simulation requires a WebGPU renderer.');
+}
+
+const particleDefaults = createDefaultOptions();
+applyPreset(particleDefaults, 'water_flip');
+const particleSim = new ParticlesSim(app.renderer, particleDefaults);
+particleSim.attach(app.stage.scene);
+
 let spinEnabled = true;
 const disposeSpin = app.onTick((delta, elapsed) => {
   if (!spinEnabled) return;
@@ -50,6 +67,10 @@ const disposeSpin = app.onTick((delta, elapsed) => {
     child.position.y = 1.5 + Math.sin(elapsed * 0.6 + index) * 0.35;
     child.rotation.y += delta * 0.4;
   });
+});
+
+const disposeParticlesTick = app.onTick((delta) => {
+  particleSim.update(delta);
 });
 
 app.dashboard.section('demo', {
@@ -64,11 +85,52 @@ app.dashboard.section('demo', {
   }
 });
 
-window.addEventListener('beforeunload', () => {
-  disposeSpin();
+const presetOptions = {
+  Water: 'water_flip',
+  Sheet: 'sheet_flip',
+  Jelly: 'jelly_mpm',
+  Sand: 'sand_mpm',
+  Slime: 'slime_mpm',
+} as const;
+
+app.dashboard.section('particles', {
+  title: 'Particles',
+  params: {
+    preset: { value: presetOptions.Water, label: 'Preset', options: presetOptions },
+    mode: { value: particleSim.options.mode, label: 'Mode', options: { FLIP: 'flip', MPM: 'mpm' } },
+    rate: { value: particleSim.options.emit.rate, label: 'Emit Rate', min: 0, max: 50000, step: 500 },
+    size: { value: particleSim.options.render.size ?? 0.025, label: 'Point Size', min: 0.01, max: 0.08, step: 0.005 },
+    opacity: { value: particleSim.options.render.opacity ?? 1, label: 'Opacity', min: 0.2, max: 1, step: 0.05 },
+  },
+  onChange: (key, value) => {
+    if (key === 'preset' && typeof value === 'string') {
+      const next = createDefaultOptions();
+      applyPreset(next, value as keyof typeof PRESETS);
+      particleSim.setParams(next);
+    }
+    if (key === 'mode' && typeof value === 'string') {
+      particleSim.setParams({ mode: value as ParticlesOptions['mode'] });
+    }
+    if (key === 'rate' && typeof value === 'number') {
+      particleSim.setParams({ emit: { type: particleSim.options.emit.type, rate: value } });
+    }
+    if (key === 'size' && typeof value === 'number') {
+      particleSim.setParams({ render: { size: value } });
+    }
+    if (key === 'opacity' && typeof value === 'number') {
+      particleSim.setParams({ render: { opacity: value } });
+    }
+  }
 });
 
-Object.assign(window, { app });
+window.addEventListener('beforeunload', () => {
+  disposeSpin();
+  disposeParticlesTick();
+  particleSim.detach(app.stage.scene);
+  particleSim.dispose();
+});
+
+Object.assign(window, { app, particleSim });
 
 function createSculpture(): Group {
   const group = new Group();
