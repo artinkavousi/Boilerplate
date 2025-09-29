@@ -14,11 +14,45 @@ import {
   TorusKnotGeometry
 } from 'three';
 import { Convas } from './CONVAS';
+import { createParticlesFeature } from './PARTICLE/Particles.index';
 
 const canvas = document.querySelector('#app');
 if (!(canvas instanceof HTMLCanvasElement)) {
   throw new Error('Canvas element with id "app" not found.');
 }
+
+const particlesFeature = createParticlesFeature({
+  mode: 'flip',
+  counts: { maxParticles: 50_000 },
+  grid: { dx: 0.025, res: [64, 64, 64] },
+  emit: {
+    type: 'sphere',
+    rate: 3_000,
+    center: [0, 2, 0],
+    radius: 0.3,
+    speed: 1.5,
+    jitter: 0.2
+  },
+  flip: {
+    picFlip: 0.05,
+    pressureIters: 50,
+    surface: 0.15
+  },
+  render: {
+    size: 0.025,
+    color: '#4dc9ff',
+    opacity: 0.9,
+    additive: false
+  },
+  colliders: [
+    {
+      kind: 'plane',
+      params: { normal: [0, 1, 0], offset: 0 },
+      friction: 0.3,
+      restitution: 0.1
+    }
+  ]
+});
 
 const app = new Convas(canvas, {
   config: {
@@ -31,7 +65,8 @@ const app = new Convas(canvas, {
       vignette: 0.3,
       grain: 0.28
     }
-  }
+  },
+  features: [particlesFeature]
 });
 
 const sculpture = createSculpture();

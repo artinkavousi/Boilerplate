@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {
-  PointsNodeMaterial,
   vec3,
   float,
   storage,
@@ -11,7 +10,8 @@ import {
   color,
   clamp,
   smoothstep,
-} from 'three/examples/jsm/nodes/Nodes.js';
+} from 'three/src/nodes/tsl/TSLBase.js';
+import PointsNodeMaterial from 'three/src/materials/nodes/PointsNodeMaterial.js';
 import { ParticlesBufferBundle, bindStorageToNodeMaterial } from './Particles.buffers';
 import { ParticlesOptions, colorToLinear } from './Particles.params';
 

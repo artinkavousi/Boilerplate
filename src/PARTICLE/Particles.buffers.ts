@@ -63,7 +63,8 @@ export class ParticlesBufferAllocator {
     const { counts, grid } = this.opts;
     const particleStride = 16 * 2 + 16 * 6; // approximate, keeps 16-byte alignment
     const particleBytes = counts.maxParticles * particleStride;
-    const gridCells = grid.res[0] * grid.res[1] * grid.res[2];
+    const [gx, gy, gz] = grid.res ?? [64, 64, 64];
+    const gridCells = gx * gy * gz;
     const gridStride = 16 * 4;
     const gridBytes = gridCells * gridStride;
     const hashStride = 16 * 2;

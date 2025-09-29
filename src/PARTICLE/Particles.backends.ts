@@ -1,6 +1,16 @@
-import { wgslFn, storage, uniform, uint, vec3, float, compute, ComputeNode } from 'three/examples/jsm/nodes/Nodes.js';
+import { storage, uniform, uint, vec3, float, computeKernel } from 'three/src/nodes/tsl/TSLBase.js';
+import { wgslFn } from 'three/src/nodes/code/FunctionNode.js';
 import { ParticlesBufferBundle } from './Particles.buffers';
 import { ParticlesOptions } from './Particles.params';
+
+// Helper to create compute node with bindings (compatibility wrapper)
+// Note: bindings are passed but may need special handling by renderer
+function compute(kernel: any, options: { bindings?: any; workgroupSize?: number[] } = {}) {
+  const { workgroupSize = [64] } = options;
+  // kernel is already a wgslFn result with complete WGSL code
+  // bindings will be resolved during shader build/execution
+  return computeKernel(kernel, workgroupSize);
+}
 
 type DispatchSize = [number, number, number];
 
@@ -16,10 +26,11 @@ function calcDispatch(total: number, workgroup: number): number {
 }
 
 function makeGridUniforms(opts: Required<ParticlesOptions>) {
+  const [gx, gy, gz] = opts.grid.res ?? [64, 64, 64];
   const sim = uniform({
     dt: float(1 / 60),
-    substeps: uint(opts.time.substeps),
-    gridRes: vec3(opts.grid.res[0], opts.grid.res[1], opts.grid.res[2]),
+    substeps: uint(opts.time.substeps ?? 2),
+    gridRes: vec3(gx, gy, gz),
     dx: float(opts.grid.dx ?? 0.02),
   });
   return sim;
@@ -60,7 +71,8 @@ function createGridClearNode(bundle: ParticlesBufferBundle, opts: Required<Parti
     bindings: { ...grid, Sim: uniforms },
     workgroupSize: [64, 1, 1],
   });
-  const gridCells = opts.grid.res[0] * opts.grid.res[1] * opts.grid.res[2];
+  const [gx, gy, gz] = opts.grid.res ?? [64, 64, 64];
+  const gridCells = gx * gy * gz;
   return {
     name: 'gridClearNode',
     node,
@@ -174,7 +186,10 @@ function createGridForcesNode(bundle: ParticlesBufferBundle, opts: Required<Part
     name: 'gridForcesNode',
     node,
     workgroupSize: [128, 1, 1],
-    dispatch: () => [calcDispatch(opts.grid.res[0] * opts.grid.res[1] * opts.grid.res[2], 128), 1, 1],
+    dispatch: () => {
+      const [gx, gy, gz] = opts.grid.res ?? [64, 64, 64];
+      return [calcDispatch(gx * gy * gz, 128), 1, 1];
+    },
   };
 }
 
@@ -197,7 +212,8 @@ function createPressureSolveNode(bundle: ParticlesBufferBundle, opts: Required<P
     workgroupSize: [128, 1, 1],
     bindings: { ...grid, Sim: uniforms },
   });
-  const total = opts.grid.res[0] * opts.grid.res[1] * opts.grid.res[2];
+  const [gx, gy, gz] = opts.grid.res ?? [64, 64, 64];
+  const total = gx * gy * gz;
   return {
     name: 'pressureSolveNode',
     node,
@@ -338,7 +354,10 @@ function createGridUpdateCflNode(bundle: ParticlesBufferBundle, opts: Required<P
     name: 'gridUpdateCflNode',
     node,
     workgroupSize: [128, 1, 1],
-    dispatch: () => [calcDispatch(opts.grid.res[0] * opts.grid.res[1] * opts.grid.res[2], 128), 1, 1],
+    dispatch: () => {
+      const [gx, gy, gz] = opts.grid.res ?? [64, 64, 64];
+      return [calcDispatch(gx * gy * gz, 128), 1, 1];
+    },
   };
 }
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { WebGPURenderer } from 'three/webgpu';
 import { FlipPass, MpmPass } from './Particles.backends';
 import { XpbdPass } from './Particles.contacts';
 import { ParticlesBufferBundle } from './Particles.buffers';
@@ -15,7 +16,7 @@ export class ParticlesGraph {
   readonly xpbd?: XpbdPass;
 
   constructor(
-    readonly renderer: THREE.WebGPURenderer,
+    readonly renderer: WebGPURenderer,
     readonly bundle: ParticlesBufferBundle,
     readonly opts: Required<ParticlesOptions>,
   ) {

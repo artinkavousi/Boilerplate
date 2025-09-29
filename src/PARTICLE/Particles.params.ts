@@ -176,7 +176,9 @@ export function mergeOptions(target: Required<ParticlesOptions>, patch?: Particl
   if (patch.mpm) Object.assign(target.mpm, patch.mpm);
   if (patch.xpbd) {
     target.xpbd.iters = patch.xpbd.iters ?? target.xpbd.iters;
-    if (patch.xpbd.compliance) Object.assign(target.xpbd.compliance, patch.xpbd.compliance);
+    if (patch.xpbd.compliance && target.xpbd.compliance) {
+      Object.assign(target.xpbd.compliance, patch.xpbd.compliance);
+    }
     if (typeof patch.xpbd.friction === 'number') target.xpbd.friction = patch.xpbd.friction;
     if (typeof patch.xpbd.restitution === 'number') target.xpbd.restitution = patch.xpbd.restitution;
     if (typeof patch.xpbd.stabilize === 'boolean') target.xpbd.stabilize = patch.xpbd.stabilize;
@@ -190,18 +192,20 @@ export function mergeOptions(target: Required<ParticlesOptions>, patch?: Particl
 
 export function validateOptions(opts: Required<ParticlesOptions>): void {
   if (opts.counts.maxParticles <= 0) throw new Error('maxParticles must be > 0');
-  if (opts.grid.dx! <= 0) throw new Error('grid.dx must be > 0');
-  const [gx, gy, gz] = opts.grid.res;
+  if ((opts.grid.dx ?? 0) <= 0) throw new Error('grid.dx must be > 0');
+  const [gx, gy, gz] = opts.grid.res ?? [0, 0, 0];
   if (gx * gy * gz <= 0) throw new Error('grid.res must be positive');
-  if (opts.time.substeps < 1) throw new Error('time.substeps must be >= 1');
-  if (opts.time.dtMax <= 0) throw new Error('time.dtMax must be > 0');
+  if ((opts.time.substeps ?? 0) < 1) throw new Error('time.substeps must be >= 1');
+  if ((opts.time.dtMax ?? 0) <= 0) throw new Error('time.dtMax must be > 0');
   if (opts.mode === 'flip') {
-    if (opts.flip.pressureIters < 1) throw new Error('flip.pressureIters must be >= 1');
-    if (opts.flip.picFlip < 0 || opts.flip.picFlip > 1) throw new Error('flip.picFlip must be within [0,1]');
+    if ((opts.flip.pressureIters ?? 0) < 1) throw new Error('flip.pressureIters must be >= 1');
+    const picFlip = opts.flip.picFlip ?? 0;
+    if (picFlip < 0 || picFlip > 1) throw new Error('flip.picFlip must be within [0,1]');
   }
   if (opts.mode === 'mpm') {
-    if (opts.mpm.E! <= 0) throw new Error('mpm.E must be > 0');
-    if (opts.mpm.nu! < 0 || opts.mpm.nu! >= 0.5) throw new Error('mpm.nu must be within [0,0.5)');
+    if ((opts.mpm.E ?? 0) <= 0) throw new Error('mpm.E must be > 0');
+    const nu = opts.mpm.nu ?? 0;
+    if (nu < 0 || nu >= 0.5) throw new Error('mpm.nu must be within [0,0.5)');
   }
 }
 

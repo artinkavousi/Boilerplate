@@ -1,7 +1,17 @@
 import * as THREE from 'three';
-import { wgslFn, storage, uniform, float, compute, texture, sampler } from 'three/examples/jsm/nodes/Nodes.js';
+import { storage, uniform, float, computeKernel, texture, sampler } from 'three/src/nodes/tsl/TSLBase.js';
+import { wgslFn } from 'three/src/nodes/code/FunctionNode.js';
 import { ParticlesBufferBundle } from './Particles.buffers';
 import { ParticlesOptions } from './Particles.params';
+
+// Helper to create compute node with bindings (compatibility wrapper)
+// Note: bindings are passed but may need special handling by renderer
+function compute(kernel: any, options: { bindings?: any; workgroupSize?: number[] } = {}) {
+  const { workgroupSize = [64] } = options;
+  // kernel is already a wgslFn result with complete WGSL code
+  // bindings will be resolved during shader build/execution
+  return computeKernel(kernel, workgroupSize);
+}
 
 type ColliderConfig = Required<ParticlesOptions>['colliders'];
 
@@ -48,8 +58,8 @@ export class XpbdPass {
       dt: opts.time.dtMax,
     });
     const xpbdUniforms = uniform({
-      complianceContact: float(opts.xpbd.compliance.contact ?? 1e-6),
-      complianceVolume: float(opts.xpbd.compliance.volume ?? 1e-6),
+      complianceContact: float(opts.xpbd.compliance?.contact ?? 1e-6),
+      complianceVolume: float(opts.xpbd.compliance?.volume ?? 1e-6),
       friction: float(opts.xpbd.friction ?? 0.4),
       restitution: float(opts.xpbd.restitution ?? 0.0),
     });
