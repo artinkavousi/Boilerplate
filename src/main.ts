@@ -13,7 +13,6 @@ import {
   TorusGeometry,
   TorusKnotGeometry
 } from 'three';
-import MeshPhysicalNodeMaterial from 'three/src/materials/nodes/MeshPhysicalNodeMaterial.js';
 import { Convas } from './CONVAS';
 
 const canvas = document.querySelector('#app');
@@ -74,7 +73,7 @@ Object.assign(window, { app });
 function createSculpture(): Group {
   const group = new Group();
 
-  const glassMaterial = new MeshPhysicalNodeMaterial({
+  const glassMaterial = new MeshPhysicalMaterial({
     metalness: 0.05,
     roughness: 0.04,
     transmission: 0.96,

@@ -2,9 +2,16 @@ import { Clock, Color, Vector2, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { WebGPURenderer } from 'three/webgpu';
 import { mergeConfig, defaultConfig, type Config, type PartialDeep } from './config';
+import WebGPU from 'three/examples/jsm/capabilities/WebGPU.js';
 import { Stage } from './STAGE/stage';
 import { PostFX } from './POSTFX/postfx';
 import { Dashboard } from './UI/dashboard';
+
+function assertWebGPUAvailable(): void {
+  if (typeof navigator === 'undefined' || !(navigator as Navigator & { gpu?: GPU | undefined }).gpu) {
+    throw new Error('WebGPU is required for this scaffold but is not available in this environment.');
+  }
+}
 
 export interface Feature {
   id: string;
@@ -35,10 +42,14 @@ export class Convas {
   private controls?: OrbitControls;
   private raf?: number;
   private resizeObserver?: ResizeObserver;
+  private rendererReady: Promise<void>;
 
   constructor(canvas: HTMLCanvasElement, options: ConvasOptions = {}) {
     this.canvas = canvas;
     this.config = mergeConfig(defaultConfig, options.config);
+    if (this.config.renderer.useWebGPU) {
+      assertWebGPUAvailable();
+    }
     this.renderer = this.createRenderer(canvas, this.config);
     this.stage = new Stage(this.renderer, this.config);
     this.postfx = new PostFX(this.renderer, this.stage.scene, this.stage.camera, this.measureCanvas(), this.config.postfx);
@@ -49,13 +60,16 @@ export class Convas {
     this.configureControls();
     this.observeResize();
 
+    this.rendererReady = this.initRenderer();
+
     if (options.features) {
       options.features.forEach(feature => {
         this.attachFeature(feature).catch(err => console.error('[CONVAS] Feature attach failed', err));
       });
     }
 
-    if (options.autoStart ?? true) {
+    const shouldStart = options.autoStart ?? true;
+    if (shouldStart) {
       this.start();
     }
   }
@@ -75,8 +89,11 @@ export class Convas {
     if ('shadowMap' in this.renderer) {
       (this.renderer as WebGLRenderer).shadowMap.enabled = true;
     }
+  }
+
+  private async initRenderer(): Promise<void> {
     if (this.renderer instanceof WebGPURenderer) {
-      this.renderer.init().catch((err: unknown) => console.warn('WebGPU init failed, falling back to WebGL', err));
+      await this.renderer.init();
     }
   }
 
@@ -100,19 +117,20 @@ export class Convas {
   }
 
   private createRenderer(canvas: HTMLCanvasElement, config: Config): RendererLike {
-    const prefersWebGPU = config.renderer.useWebGPU && WebGPURenderer.isAvailable();
-    if (prefersWebGPU) {
+    const rendererConfig = config.renderer;
+    if (rendererConfig.useWebGPU) {
       try {
-        return new WebGPURenderer({ canvas, antialias: config.renderer.antialias });
+        return new WebGPURenderer({ canvas, antialias: rendererConfig.antialias });
       } catch (err) {
-        console.warn('[CONVAS] WebGPU renderer creation failed, falling back to WebGL.', err);
+        const message = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to create WebGPU renderer: ${message}`);
       }
     }
-    const renderer = new WebGLRenderer({ canvas, antialias: config.renderer.antialias });
+    const renderer = new WebGLRenderer({ canvas, antialias: rendererConfig.antialias });
     (renderer as any).physicallyCorrectLights = true;
-    (renderer as any).outputColorSpace = config.renderer.colorSpace;
-    (renderer as any).toneMapping = config.renderer.toneMapping;
-    renderer.toneMappingExposure = config.renderer.exposure;
+    (renderer as any).outputColorSpace = rendererConfig.colorSpace;
+    (renderer as any).toneMapping = rendererConfig.toneMapping;
+    renderer.toneMappingExposure = rendererConfig.exposure;
     return renderer;
   }
 
@@ -190,8 +208,14 @@ export class Convas {
 
   start(): void {
     if (this.raf != null) return;
-    this.clock.start();
-    this.raf = requestAnimationFrame(this.render);
+    const begin = () => {
+      if (this.raf != null) return;
+      this.clock.start();
+      this.raf = requestAnimationFrame(this.render);
+    };
+    this.rendererReady
+      .then(begin)
+      .catch(err => console.error('[CONVAS] Renderer initialization failed', err));
   }
 
   stop(): void {
