@@ -1,0 +1,21 @@
+{
+  "name": "universal-webgpu-tsl-scaffold",
+  "version": "0.1.0",
+  "description": "Universal WebGPU+TSL scaffold built with Three.js and Vite",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.180.0",
+    "tweakpane": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/three": "^0.180.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.0"
+  }
+}
