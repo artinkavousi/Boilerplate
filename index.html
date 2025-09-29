@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGPU+TSL Scaffold Demo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(circle at top, #111420 0%, #06070c 55%, #030308 100%);
+        color: #f1f3ff;
+      }
+      body {
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+      }
+      #app {
+        flex: 1;
+        display: block;
+        width: 100%;
+        height: 100%;
+        outline: none;
+      }
+      .hud {
+        position: fixed;
+        left: 50%;
+        bottom: 32px;
+        transform: translateX(-50%);
+        background: rgba(10, 12, 18, 0.72);
+        padding: 12px 18px;
+        border-radius: 999px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 13px;
+        line-height: 1.45;
+        letter-spacing: 0.02em;
+        pointer-events: none;
+        text-align: center;
+        color: rgba(230, 232, 239, 0.85);
+      }
+      a {
+        color: inherit;
+      }
+      @media (max-width: 640px) {
+        .hud {
+          width: min(92vw, 480px);
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="app" aria-label="Three.js WebGPU demo"></canvas>
+    <div class="hud">
+      Orbit with the mouse or touch, tweak lighting in the dashboard, and toggle animation via “Demo Scene → Animate”.
+    </div>
+    <noscript>
+      <div class="hud">Enable JavaScript to view the WebGPU+TSL scaffold demo.</div>
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,10 +1,10 @@
 import { Clock, Color, Vector2, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { WebGPURenderer } from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js';
-import { mergeConfig, defaultConfig, type Config, type PartialDeep } from './config.js';
-import { Stage } from './STAGE/stage.js';
-import { PostFX } from './POSTFX/postfx.js';
-import { Dashboard } from './UI/dashboard.js';
+import { WebGPURenderer } from 'three/webgpu';
+import { mergeConfig, defaultConfig, type Config, type PartialDeep } from './config';
+import { Stage } from './STAGE/stage';
+import { PostFX } from './POSTFX/postfx';
+import { Dashboard } from './UI/dashboard';
 
 export interface Feature {
   id: string;
@@ -31,6 +31,7 @@ export class Convas {
   private readonly clock = new Clock();
   private readonly size = new Vector2(1, 1);
   private readonly features = new Map<string, Feature>();
+  private readonly tickHandlers = new Set<(delta: number, elapsed: number) => void>();
   private controls?: OrbitControls;
   private raf?: number;
   private resizeObserver?: ResizeObserver;
@@ -75,7 +76,7 @@ export class Convas {
       (this.renderer as WebGLRenderer).shadowMap.enabled = true;
     }
     if (this.renderer instanceof WebGPURenderer) {
-      this.renderer.init().catch(err => console.warn('WebGPU init failed, falling back to WebGL', err));
+      this.renderer.init().catch((err: unknown) => console.warn('WebGPU init failed, falling back to WebGL', err));
     }
   }
 
@@ -101,11 +102,16 @@ export class Convas {
   private createRenderer(canvas: HTMLCanvasElement, config: Config): RendererLike {
     const prefersWebGPU = config.renderer.useWebGPU && WebGPURenderer.isAvailable();
     if (prefersWebGPU) {
-      return new WebGPURenderer({ canvas, antialias: config.renderer.antialias });
+      try {
+        return new WebGPURenderer({ canvas, antialias: config.renderer.antialias });
+      } catch (err) {
+        console.warn('[CONVAS] WebGPU renderer creation failed, falling back to WebGL.', err);
+      }
     }
     const renderer = new WebGLRenderer({ canvas, antialias: config.renderer.antialias });
-    renderer.physicallyCorrectLights = true;
-    renderer.outputEncoding = config.renderer.colorSpace as any;
+    (renderer as any).physicallyCorrectLights = true;
+    (renderer as any).outputColorSpace = config.renderer.colorSpace;
+    (renderer as any).toneMapping = config.renderer.toneMapping;
     renderer.toneMappingExposure = config.renderer.exposure;
     return renderer;
   }
@@ -175,7 +181,9 @@ export class Convas {
 
   private render = (): void => {
     const delta = this.clock.getDelta();
+    const elapsed = this.clock.elapsedTime;
     this.controls?.update();
+    this.tickHandlers.forEach(handler => handler(delta, elapsed));
     this.postfx.render(delta);
     this.raf = requestAnimationFrame(this.render);
   };
@@ -213,6 +221,11 @@ export class Convas {
     this.features.delete(id);
   }
 
+  onTick(handler: (delta: number, elapsed: number) => void): () => void {
+    this.tickHandlers.add(handler);
+    return () => this.tickHandlers.delete(handler);
+  }
+
   dispose(): void {
     this.stop();
     this.controls?.dispose();
@@ -221,5 +234,6 @@ export class Convas {
     this.stage.dispose();
     this.features.forEach(feature => feature.detach?.(this));
     this.features.clear();
+    this.tickHandlers.clear();
   }
 }

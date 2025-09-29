@@ -12,10 +12,10 @@ import {
   WebGLRenderer
 } from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import type { WebGPURenderer } from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js';
-import type { Config } from '../config.js';
-import { CameraRig } from './camera.js';
-import { LightRig } from './light.js';
+import type { WebGPURenderer } from 'three/webgpu';
+import type { Config } from '../config';
+import { CameraRig } from './camera';
+import { LightRig } from './light';
 
 export type RendererLike = WebGLRenderer | WebGPURenderer;
 

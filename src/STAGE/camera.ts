@@ -1,5 +1,5 @@
 import { PerspectiveCamera, Vector3 } from 'three';
-import type { CameraConfig } from '../config.js';
+import type { CameraConfig } from '../config';
 
 export class CameraRig {
   readonly camera: PerspectiveCamera;

@@ -4,7 +4,7 @@ import {
   DirectionalLight,
   Group
 } from 'three';
-import type { LightConfig } from '../config.js';
+import type { LightConfig } from '../config';
 
 export class LightRig extends Group {
   constructor(config: LightConfig) {

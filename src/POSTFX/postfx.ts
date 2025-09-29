@@ -4,7 +4,7 @@ import {
   Vector2,
   WebGLRenderer
 } from 'three';
-import type { WebGPURenderer } from 'three/examples/jsm/renderers/webgpu/WebGPURenderer.js';
+import type { WebGPURenderer } from 'three/webgpu';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
@@ -12,7 +12,7 @@ import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
-import type { Config } from '../config.js';
+import type { Config } from '../config';
 
 export type RendererLike = WebGLRenderer | WebGPURenderer;
 
@@ -60,7 +60,8 @@ export class PostFX {
       this.vignettePass.uniforms['darkness'].value = 1.0 + config.vignette;
       this.composer.addPass(this.vignettePass);
 
-      this.grainPass = new FilmPass(config.grain * 2.5, 0, 0, false);
+      this.grainPass = new FilmPass();
+      (this.grainPass.uniforms as Record<string, { value: number }>).nIntensity.value = config.grain * 2.5;
       this.composer.addPass(this.grainPass);
 
       this.setSize(size.width, size.height);
@@ -84,7 +85,7 @@ export class PostFX {
       this.vignettePass.uniforms['darkness'].value = 1.0 + config.vignette;
     }
     if (this.grainPass) {
-      this.grainPass.uniforms['nIntensity'].value = config.grain * 2.5;
+      (this.grainPass.uniforms as Record<string, { value: number }>).nIntensity.value = config.grain * 2.5;
     }
   }
 

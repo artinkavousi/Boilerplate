@@ -171,6 +171,15 @@ npm run dev
 
 Open the printed local URL to see the staged scene, dashboard, and post-processing stack. Adjust renderer exposure, light intensities, and PostFX parameters live from the glassmorphism dashboard.
 
+### Production preview
+
+```bash
+npm run build
+npm run preview
+```
+
+The preview build serves the same demo scene as `npm run dev`, showcasing the glass sculpture, animated halo particles, and dashboard controls (exposure, lighting, bloom/DOF plus the new “Demo Scene → Animate” toggle).
+
 ---
 
 ## 10) Quality, Performance & Self‑Checks
