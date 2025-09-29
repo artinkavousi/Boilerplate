@@ -162,6 +162,17 @@ new Convas(document.querySelector('#app') as HTMLCanvasElement, { config: { rend
 
 ---
 
+## Getting Started (This Repo)
+
+```bash
+npm install
+npm run dev
+```
+
+Open the printed local URL to see the staged scene, dashboard, and post-processing stack. Adjust renderer exposure, light intensities, and PostFX parameters live from the glassmorphism dashboard.
+
+---
+
 ## 10) Quality, Performance & Self‑Checks
 
 * **Budgets:** main thread < 4 ms, GPU < 12 ms on mid‑tier dGPU (1080p), 60 FPS target.
